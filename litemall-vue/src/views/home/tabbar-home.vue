@@ -286,7 +286,7 @@ export default {
 }
 
 .goods-channel .item {
-  width: 50px;
+  width: 92px;
   height: 50px;
   margin-left: 10px;
 }

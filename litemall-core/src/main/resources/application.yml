@@ -3,6 +3,10 @@ spring:
     active: core, db
   messages:
     encoding: UTF-8
+  http:
+    multipart:
+      maxFileSize: 100Mb
+      maxRequestSize: 1000Mb
 
 logging:
   level:

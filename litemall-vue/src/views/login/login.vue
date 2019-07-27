@@ -125,7 +125,7 @@ export default {
       const password = this.password;
       const account = this.getUserType(this.account);
       return {
-        [account]: this.account,
+        username: this.account,
         password: password
       };
     },
