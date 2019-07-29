@@ -1,5 +1,6 @@
 package org.linlinjava.litemall.wx.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.github.binarywang.wxpay.bean.notify.WxPayNotifyResponse;
 import com.github.binarywang.wxpay.bean.notify.WxPayOrderNotifyResult;
 import com.github.binarywang.wxpay.bean.order.WxPayMpOrderResult;
@@ -8,6 +9,7 @@ import com.github.binarywang.wxpay.bean.result.BaseWxPayResult;
 import com.github.binarywang.wxpay.constant.WxPayConstants;
 import com.github.binarywang.wxpay.exception.WxPayException;
 import com.github.binarywang.wxpay.service.WxPayService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,6 +22,7 @@ import org.linlinjava.litemall.core.system.SystemConfig;
 import org.linlinjava.litemall.core.util.DateTimeUtil;
 import org.linlinjava.litemall.core.util.JacksonUtil;
 import org.linlinjava.litemall.core.util.ResponseUtil;
+import org.linlinjava.litemall.db.dao.LitemallActiveMapper;
 import org.linlinjava.litemall.db.domain.*;
 import org.linlinjava.litemall.db.service.*;
 import org.linlinjava.litemall.db.util.CouponUserConstant;
@@ -36,10 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.linlinjava.litemall.wx.util.WxResponseCode.*;
 
@@ -242,6 +242,9 @@ public class WxOrderService {
         String message = JacksonUtil.parseString(body, "message");
         Integer grouponRulesId = JacksonUtil.parseInteger(body, "grouponRulesId");
         Integer grouponLinkId = JacksonUtil.parseInteger(body, "grouponLinkId");
+        // 参加活动人员
+        String activeBody = JacksonUtil.parseString(body, "actives");
+        List<LitemallActive> litemallActives = JSONObject.parseArray(activeBody, LitemallActive.class);
 
         //如果是团购项目,验证活动是否有效
         if (grouponRulesId != null && grouponRulesId > 0) {
@@ -368,6 +371,11 @@ public class WxOrderService {
             orderGoods.setAddTime(LocalDateTime.now());
 
             orderGoodsService.add(orderGoods);
+
+            if(CollectionUtils.isNotEmpty(litemallActives)){
+                // 添加参加活动人员信息
+                addActives(orderId, orderGoods.getGoodsId(), litemallActives);
+            }
         }
 
         // 删除购物车里面的商品信息
@@ -422,6 +430,24 @@ public class WxOrderService {
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", orderId);
         return ResponseUtil.ok(data);
+    }
+
+    @Autowired
+    LitemallActiveMapper litemallActiveMapper;
+
+    /**
+     * 添加参加活动人员信息
+     * @param orderId
+     * @param goodsId
+     * @param litemallActiveList
+     */
+    public void addActives(Integer orderId, Integer goodsId, List<LitemallActive> litemallActiveList){
+        for (LitemallActive litemallActive : litemallActiveList) {
+            litemallActive.setOrderId(orderId);
+            litemallActive.setGoodsId(goodsId);
+            litemallActive.setAddTime(LocalDateTime.now());
+        }
+
     }
 
     /**
