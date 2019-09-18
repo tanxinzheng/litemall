@@ -56,7 +56,7 @@
         <javaClientGenerator type="XMLMAPPER" targetPackage="org.linlinjava.litemall.db.dao"
                              targetProject="src/main/java"/>
         <!--表名-->
-        <table tableName="litemall_active">
+        <table tableName="litemall_goods">
             <generatedKey column="id" sqlStatement="MySql" identity="true"/>
         </table>
     </context>

@@ -38,7 +38,12 @@
             <el-radio :label="false">未售</el-radio>
           </el-radio-group>
         </el-form-item>
-
+        <el-form-item label="是否旅游类商品" prop="isTripGoods">
+          <el-radio-group v-model="goods.isTripGoods">
+            <el-radio :label="true">旅游类</el-radio>
+            <el-radio :label="false">非旅游类</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="商品图片">
           <el-upload
             :headers="headers"

@@ -27,7 +27,7 @@
         @click.native="skuClick"
       />
       <van-cell title="属性" isLink @click.native="propsPopup = true"/>
-      <van-cell title="运费" value="满88免邮费"/>
+      <van-cell title="运费" value="满88免邮费" v-if="!goods.info.isTripGoods"/>
     </van-cell-group>
     <van-sku
       v-model="showSku"
@@ -51,11 +51,17 @@
       </div>
     </div>
 
-    <van-goods-action>
+    <van-goods-action v-if="!goods.info.isTripGoods">
       <van-goods-action-icon @click="toCart" icon="cart-o" :info="(cartInfo > 0) ? cartInfo : ''"/>
       <van-goods-action-icon @click="addCollect" icon="star-o" :style="(goods.userHasCollect !== 0) ? 'color: #f7b444;':''"/>
       <van-goods-action-button type="warning" @click="skuClick" text="加入购物车"/>
       <van-goods-action-button type="danger" @click="skuClick" text="立即购买"/>
+    </van-goods-action>
+
+    <van-goods-action v-if="goods.info.isTripGoods">
+      <van-goods-action-icon @click="addCollect" icon="star-o" :style="(goods.userHasCollect !== 0) ? 'color: #f7b444;':''"/>
+      <van-goods-action-button type="warning" @click="skuClick" text="加入购物车"/>
+      <van-goods-action-button type="danger" @click="skuClick" text="立即报名"/>
     </van-goods-action>
 
   </div>
@@ -115,6 +121,7 @@ export default {
       _.each(this.goods.attribute, json => {
         props_arr.push([json['attribute'], json['value']]);
       });
+
       return props_arr || [];
     }
   },
@@ -202,8 +209,12 @@ export default {
       let params = {
         goodsId: data.goodsId,
         number: data.selectedNum,
-        productId: 0
+        productId: 0,
+        isTripGoods: data.isTripGoods
       };
+      if(this.goods.info.isTripGoods){
+        params.isTripGoods = this.goods.info.isTripGoods
+      }
       if (_.has(data.selectedSkuComb, 's3')) {
         this.$toast({
           message: '目前仅支持两规格',

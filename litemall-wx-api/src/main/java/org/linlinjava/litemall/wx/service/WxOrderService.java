@@ -1,5 +1,6 @@
 package org.linlinjava.litemall.wx.service;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.binarywang.wxpay.bean.notify.WxPayNotifyResponse;
 import com.github.binarywang.wxpay.bean.notify.WxPayOrderNotifyResult;
@@ -9,6 +10,7 @@ import com.github.binarywang.wxpay.bean.result.BaseWxPayResult;
 import com.github.binarywang.wxpay.constant.WxPayConstants;
 import com.github.binarywang.wxpay.exception.WxPayException;
 import com.github.binarywang.wxpay.service.WxPayService;
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -29,6 +31,7 @@ import org.linlinjava.litemall.db.util.CouponUserConstant;
 import org.linlinjava.litemall.db.util.OrderHandleOption;
 import org.linlinjava.litemall.db.util.OrderUtil;
 import org.linlinjava.litemall.core.util.IpUtil;
+import org.linlinjava.litemall.wx.vo.OrderSubmit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,6 +107,8 @@ public class WxOrderService {
     private LitemallCouponUserService couponUserService;
     @Autowired
     private CouponVerifyService couponVerifyService;
+    @Autowired
+    private LitemallActiveService litemallActiveService;
 
     /**
      * 订单列表
@@ -200,10 +205,12 @@ public class WxOrderService {
 
         List<LitemallOrderGoods> orderGoodsList = orderGoodsService.queryByOid(order.getId());
 
+        List<LitemallActive> actives = litemallActiveService.getActiveByOrderId(order.getId());
+
         Map<String, Object> result = new HashMap<>();
         result.put("orderInfo", orderVo);
         result.put("orderGoods", orderGoodsList);
-
+        result.put("actives", actives);
         // 订单状态为已发货且物流信息不为空
         //"YTO", "800669400640887922"
         if (order.getOrderStatus().equals(OrderUtil.STATUS_SHIP)) {
@@ -236,6 +243,7 @@ public class WxOrderService {
         if (body == null) {
             return ResponseUtil.badArgument();
         }
+        OrderSubmit orderSubmit = JSONObject.parseObject(body, OrderSubmit.class);
         Integer cartId = JacksonUtil.parseInteger(body, "cartId");
         Integer addressId = JacksonUtil.parseInteger(body, "addressId");
         Integer couponId = JacksonUtil.parseInteger(body, "couponId");
@@ -243,8 +251,6 @@ public class WxOrderService {
         Integer grouponRulesId = JacksonUtil.parseInteger(body, "grouponRulesId");
         Integer grouponLinkId = JacksonUtil.parseInteger(body, "grouponLinkId");
         // 参加活动人员
-        String activeBody = JacksonUtil.parseString(body, "actives");
-        List<LitemallActive> litemallActives = JSONObject.parseArray(activeBody, LitemallActive.class);
 
         //如果是团购项目,验证活动是否有效
         if (grouponRulesId != null && grouponRulesId > 0) {
@@ -372,9 +378,9 @@ public class WxOrderService {
 
             orderGoodsService.add(orderGoods);
 
-            if(CollectionUtils.isNotEmpty(litemallActives)){
+            if(CollectionUtils.isNotEmpty(orderSubmit.getActives())){
                 // 添加参加活动人员信息
-                addActives(orderId, orderGoods.getGoodsId(), litemallActives);
+                addActives(orderId, orderGoods.getGoodsId(), orderSubmit.getActives());
             }
         }
 
@@ -446,8 +452,8 @@ public class WxOrderService {
             litemallActive.setOrderId(orderId);
             litemallActive.setGoodsId(goodsId);
             litemallActive.setAddTime(LocalDateTime.now());
+            litemallActiveMapper.insert(litemallActive);
         }
-
     }
 
     /**

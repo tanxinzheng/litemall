@@ -18,16 +18,16 @@
     <van-cell class="order-coupon" title="优惠券" is-link :value="getCouponValue()" @click="getCoupons" />
   </van-cell-group>
 
-<!-- 优惠券列表 -->
-<van-popup v-model="showList" position="bottom">
-  <van-coupon-list
-    :coupons="coupons"
-    :chosen-coupon="chosenCoupon"
-    :disabled-coupons="disabledCoupons"
-    @change="onChange"
-    @exchange="onExchange"
-  />
-</van-popup>
+    <!-- 优惠券列表 -->
+    <van-popup v-model="showList" position="bottom">
+      <van-coupon-list
+        :coupons="coupons"
+        :chosen-coupon="chosenCoupon"
+        :disabled-coupons="disabledCoupons"
+        @change="onChange"
+        @exchange="onExchange"
+      />
+    </van-popup>
 
     <van-card
       v-for="item in checkedGoodsList"
@@ -37,17 +37,61 @@
       :price="item.price +'.00'"
       :thumb="item.picUrl"
     >
-      <div slot="desc">
-        <div class="van-card__desc">
-          <van-tag plain style="margin-right:6px;" v-for="(spec, index) in item.specifications" :key="index">
-            {{spec}}
-          </van-tag>
+        <div slot="footer" class="active-footer">
+            <van-cell-group
+                    center
+                    title="出行人信息"
+                    v-for="active in item.actives">
+                <van-field
+                        requier
+                        v-model="active.name"
+                        placeholder="请输入姓名（用于购买保险）"
+                        label="姓名">
+                </van-field>
+                <van-field
+                        requier
+                        v-model="active.cardId"
+                        placeholder="请输入身份证（用于购买保险）"
+                        label="身份证">
+                </van-field>
+                <van-field
+                        requier
+                        v-model="active.nickname"
+                        placeholder="请输入昵称（户外花名）"
+                        label="昵称">
+                </van-field>
+                <van-field
+                        requier
+                        v-model="active.phone"
+                        placeholder="请输入手机号码（用户沟通联系）"
+                        label="手机号码">
+                </van-field>
+<!--                <van-field v-model="active.meetingPlace" placeholder="请输入集合地点" label="集合地点">-->
+<!--                </van-field>-->
+<!--                <van-field-->
+<!--                        readonly-->
+<!--                        clickable-->
+<!--                        label="集合地点"-->
+<!--                        :value="active.meetingPlace"-->
+<!--                        placeholder="请选择集合地点"-->
+<!--                        @click="showPicker = true"-->
+<!--                        isLink-->
+<!--                />-->
+<!--                <van-popup v-model="showPicker" position="bottom">-->
+<!--                    <van-picker-->
+<!--                            v-model="picker"-->
+<!--                            show-toolbar-->
+<!--                            :ref="picker"-->
+<!--                            :columns="meetingPlaces"-->
+<!--                            @change="onConfirm"-->
+<!--                    />-->
+<!--                </van-popup>-->
+            </van-cell-group>
         </div>
-      </div>
     </van-card>
 
     <van-cell-group>
-      <van-cell title="商品金额">
+      <van-cell title="订单总金额">
         <span class="red">{{goodsTotalPrice * 100 | yuan}}</span>
       </van-cell>
       <van-cell title="邮费">
@@ -57,8 +101,8 @@
         <span class="red">-{{ couponPrice * 100| yuan}}</span>
       </van-cell>
       <van-field v-model="message" placeholder="请输入备注" label="订单备注">
-      <template slot="icon">{{message.length}}/50</template>
-      </van-field>      
+        <template slot="icon">{{message.length}}/50</template>
+      </van-field>
     </van-cell-group>
 
     <van-submit-bar
@@ -72,7 +116,7 @@
 </template>
 
 <script>
-import { Card, Tag, ard, Field, SubmitBar, Toast  } from 'vant';
+import { Card, Tag, ard, Field, SubmitBar, Toast, Picker  } from 'vant';
 import { CouponCell, CouponList, Popup } from 'vant';
 import { cartCheckout, orderSubmit, couponSelectList} from '@/api/api';
 import { getLocalStorage, setLocalStorage } from '@/utils/local-storage';
@@ -81,6 +125,8 @@ import dayjs from 'dayjs';
 export default {
   data() {
     return {
+      actives: [],
+      picker: {},
       checkedGoodsList: [],
       checkedAddress: {},
       availableCouponLength: 0, // 可用的优惠券数量
@@ -91,12 +137,13 @@ export default {
       orderTotalPrice: 0, //订单总价
       actualPrice: 0, //实际需要支付的总价
       message: '',
-
+      showPicker: false,
+      meetingPlaces: ['龙阳路', '莘庄', '体育场'],
       isDisabled: false,
       showList: false,
       chosenCoupon: -1,
       coupons: [],
-      disabledCoupons: [] 
+      disabledCoupons: []
     };
   },
   created() {
@@ -104,7 +151,11 @@ export default {
   },
 
   methods: {
-    onSubmit() {     
+    onConfirm (picker, active) {
+        active.meetingPlace = picker.getValues()
+        this.showPicker = false;
+    },
+    onSubmit() {
       const {AddressId, CartId, CouponId} = getLocalStorage('AddressId', 'CartId', 'CouponId');
 
       if (AddressId === null) {
@@ -112,7 +163,14 @@ export default {
         return;
       }
 
-
+      let actives = [];
+      if(this.checkedGoodsList.length > 0){
+          for (let i = 0; i < this.checkedGoodsList.length; i++) {
+              for (let j = 0; j < this.checkedGoodsList[i].actives.length; j++) {
+                  actives.push(this.checkedGoodsList[i].actives[j]);
+              }
+          }
+      }
       this.isDisabled = true;
 
       orderSubmit({
@@ -121,9 +179,10 @@ export default {
         couponId: CouponId,
         grouponLinkId: 0,
         grouponRulesId: 0,
+        actives: actives,
         message: this.message
       }).then(res => {
-        
+
         // 下单成功，重置下单参数。
         setLocalStorage({AddressId: 0, CartId: 0, CouponId: 0});
 
@@ -169,7 +228,7 @@ export default {
             startAt: new Date(c.startTime).getTime()/1000,
             endAt: new Date(c.endTime).getTime()/1000,
             valueDesc: c.discount,
-            unitDesc: '元'            
+            unitDesc: '元'
           }
           this.coupons.push(coupon)
 
@@ -178,7 +237,7 @@ export default {
             break;
           }
         }
-        
+
         this.showList = true
       })
     },
@@ -189,6 +248,15 @@ export default {
           var data = res.data.data
 
           this.checkedGoodsList = data.checkedGoodsList;
+          for (let i = 0; i < this.checkedGoodsList.length; i++) {
+              this.checkedGoodsList[i].actives = []
+              for (let j = 1; j <= this.checkedGoodsList[i].number; j++) {
+                  this.checkedGoodsList[i].actives.push({
+                      goodsId: this.checkedGoodsList[i].goodsId,
+                      meetingPlace: ''
+                  })
+              }
+          }
           this.checkedAddress= data.checkedAddress;
           this.availableCouponLength= data.availableCouponLength;
           this.actualPrice= data.actualPrice;
@@ -205,20 +273,20 @@ export default {
     onChange(index) {
       this.showList = false;
       this.chosenCoupon = index;
-      
+
       if(index === -1 ){
         setLocalStorage({CouponId: -1});
       }
       else{
         const couponId = this.coupons[index].id;
-        setLocalStorage({CouponId: couponId});  
+        setLocalStorage({CouponId: couponId});
       }
 
       this.init()
     },
     onExchange() {
       this.$toast("兑换暂不支持");
-    }    
+    }
   },
 
   components: {
@@ -229,7 +297,8 @@ export default {
     [Tag.name]: Field,
     [CouponCell.name]: CouponCell,
     [CouponList.name]: CouponList,
-    [Popup.name]: Popup
+    [Popup.name]: Popup,
+    [Picker.name]: Picker
   }
 };
 </script>
@@ -238,5 +307,12 @@ export default {
 <style lang="scss" scoped>
 .order-coupon {
   margin-top: 10px;
+}
+.active-footer {
+    padding-left: 0;
+    text-align: left;
+}
+.van-card__footer {
+    padding-left: 0;
 }
 </style>

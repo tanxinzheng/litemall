@@ -85,6 +85,12 @@
         </template>
       </el-table-column>
 
+      <el-table-column align="center" width="100" label="是否旅游类" prop="isTripGoods">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isTripGoods ? 'success' : 'error' ">{{ scope.row.isTripGoods ? '旅游类' : '非旅游类' }}</el-tag>
+        </template>
+      </el-table-column>
+
       <el-table-column align="center" label="操作" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>

@@ -7,23 +7,76 @@
                 desc="暂无描述"
                 :num="item.number"
                 :price="item.price +'.00'"
-                :thumb="item.picUrl"></van-card>
-
+                :thumb="item.picUrl">
+        <div slot="footer" class="active-footer">
+          <van-cell-group
+                  center
+                  title="出行人信息"
+                  v-if="item.goodsId === active.goodsId"
+                  v-for="active in actives">
+            <van-field
+                    requier
+                    readonly
+                    v-model="active.name"
+                    placeholder="请输入姓名（用于购买保险）"
+                    label="姓名">
+            </van-field>
+            <van-field
+                    readonly
+                    v-model="active.cardId"
+                    placeholder="请输入身份证（用于购买保险）"
+                    label="身份证">
+            </van-field>
+            <van-field
+                    readonly
+                    v-model="active.nickname"
+                    placeholder="请输入昵称（户外花名）"
+                    label="昵称">
+            </van-field>
+            <van-field
+                    readonly
+                    v-model="active.phone"
+                    placeholder="请输入手机号码（用户沟通联系）"
+                    label="手机号码">
+            </van-field>
+            <!--                <van-field v-model="active.meetingPlace" placeholder="请输入集合地点" label="集合地点">-->
+            <!--                </van-field>-->
+            <!--                <van-field-->
+            <!--                        readonly-->
+            <!--                        clickable-->
+            <!--                        label="集合地点"-->
+            <!--                        :value="active.meetingPlace"-->
+            <!--                        placeholder="请选择集合地点"-->
+            <!--                        @click="showPicker = true"-->
+            <!--                        isLink-->
+            <!--                />-->
+            <!--                <van-popup v-model="showPicker" position="bottom">-->
+            <!--                    <van-picker-->
+            <!--                            v-model="picker"-->
+            <!--                            show-toolbar-->
+            <!--                            :ref="picker"-->
+            <!--                            :columns="meetingPlaces"-->
+            <!--                            @change="onConfirm"-->
+            <!--                    />-->
+            <!--                </van-popup>-->
+          </van-cell-group>
+        </div>
+      </van-card>
       <van-cell-group>
         <van-cell title="商品金额">
           <span class="red">{{orderInfo.goodsPrice * 100 | yuan}}</span>
         </van-cell>
-        <van-cell title="快递费用">
-          <span class="red">{{orderInfo.freightPrice * 100 | yuan}}</span>
-        </van-cell>
+<!--        <van-cell title="快递费用">-->
+<!--          <span class="red">{{orderInfo.freightPrice * 100 | yuan}}</span>-->
+<!--        </van-cell>-->
       </van-cell-group>
     </div>
 
-    <van-cell-group style="margin-top: 20px;">
-      <van-cell icon="dingwei"
-                :title="`${orderInfo.consignee}  ${orderInfo.mobile}`"
-                :label="orderInfo.address" />
-    </van-cell-group>
+<!--    <van-cell-group style="margin-top: 20px;">-->
+<!--      <van-cell icon="dingwei"-->
+<!--                :title="`${orderInfo.consignee}  ${orderInfo.mobile}`"-->
+<!--                :label="orderInfo.address"></van-cell>-->
+<!--    </van-cell-group>-->
 
     <van-cell-group style="margin-top: 20px;">
       <van-cell title="下单时间">
@@ -35,7 +88,6 @@
       <van-cell title="订单备注">
         <span>{{orderInfo.remark }}</span>
       </van-cell>
-
       <van-cell title="实付款：">
         <span class="red">{{orderInfo.actualPrice * 100 | yuan}}</span>
       </van-cell>
@@ -99,6 +151,7 @@ export default {
     return {
       isSubmit: false,
       isDisabled: false,
+      actives: [],
       orderInfo: {},
       orderGoods: [],
       handleOption: {},
@@ -129,7 +182,7 @@ export default {
       this.$dialog
         .confirm({ message: '确定要取消该订单吗?' })
         .then(() => {
-          orderDelete({ orderId: id }).then(() => {
+          orderCancel({ orderId: id }).then(() => {
             this.init();
             this.$toast('已取消该订单');
           });
@@ -170,6 +223,7 @@ export default {
         var data = res.data.data;
         this.orderInfo = data.orderInfo;
         this.orderGoods = data.orderGoods;
+        this.actives = data.actives;
         this.handleOption = data.orderInfo.handleOption;
         this.expressInfo = data.expressInfo;
       });
@@ -192,5 +246,12 @@ export default {
 <style lang="scss" scoped>
 .order_detail {
   padding-bottom: 70px;
+}
+.active-footer {
+  padding-left: 0;
+  text-align: left;
+}
+.van-card__footer {
+  padding-left: 0;
 }
 </style>

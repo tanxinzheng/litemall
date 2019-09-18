@@ -14,9 +14,9 @@
           <van-panel v-for="(el, i) in orderList"
                      :key="i"
                      :title="'订单编号: ' + el.orderSn"
-                     :status="el.orderStatusText"
-                     @click.native="toOrderDetail(el.id)">
+                     :status="el.orderStatusText">
             <van-card v-for="(goods, goodsI) in el.goodsList"
+                      @click.native="toOrderDetail(el.id)"
                       :key="goodsI"
                       :title="goods.goodsName"
                       :num="goods.number"
@@ -131,7 +131,7 @@ export default {
       this.$dialog
         .confirm({ message: '确定要取消该订单吗?' })
         .then(() => {
-          orderDelete({ orderId: id }).then(() => {
+          orderCancel({ orderId: id }).then(() => {
             this.init();
             this.$toast('已取消该订单');
           });
